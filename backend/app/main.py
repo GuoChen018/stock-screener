@@ -362,13 +362,19 @@ def search_tickers(q: str = Query("", min_length=1, max_length=10)):
     q = q.upper().strip()
     results = []
     try:
-        t = yf.Ticker(q, session=yf_session)
-        info = t.info
-        if info and info.get("regularMarketPrice"):
+        data = yf.download(q, period="5d", interval="1d", progress=False, session=yf_session)
+        if not data.empty:
+            name = q
+            try:
+                info = yf.Ticker(q, session=yf_session).info
+                if info:
+                    name = info.get("shortName", info.get("longName", q))
+            except Exception:
+                pass
             results.append({
-                "ticker": info.get("symbol", q),
-                "name": info.get("shortName", info.get("longName", q)),
-                "exchange": info.get("exchange", ""),
+                "ticker": q,
+                "name": name,
+                "exchange": "",
             })
     except Exception:
         pass
@@ -532,11 +538,15 @@ def add_to_watchlist(req: WatchlistAddRequest, db: Session = Depends(get_db)):
     company_name = ticker
     try:
         import yfinance as yf
-        info = yf.Ticker(ticker, session=yf_session).info
-        if info and info.get("regularMarketPrice"):
-            company_name = info.get("shortName", info.get("longName", ticker))
-        else:
+        data = yf.download(ticker, period="5d", interval="1d", progress=False, session=yf_session)
+        if data.empty:
             raise HTTPException(status_code=400, detail=f"Ticker '{ticker}' not found")
+        try:
+            info = yf.Ticker(ticker, session=yf_session).info
+            if info:
+                company_name = info.get("shortName", info.get("longName", ticker))
+        except Exception:
+            pass
     except HTTPException:
         raise
     except Exception:
