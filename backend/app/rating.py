@@ -19,6 +19,16 @@ class RatingResult:
         return self.reasons
 
 
+def _to_float(v) -> float | None:
+    """Coerce to float, returning None for non-numeric values."""
+    if v is None:
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
 def rate_signal(
     price: float,
     sma30: float,
@@ -31,6 +41,11 @@ def rate_signal(
     free_cashflow: int = 0,
     ps_ratio: float | None = None,
 ) -> RatingResult:
+    pe_ratio = _to_float(pe_ratio)
+    ps_ratio = _to_float(ps_ratio)
+    revenue_growth = _to_float(revenue_growth)
+    operating_margin = _to_float(operating_margin)
+
     stars = 0
     reasons: list[dict] = []
 
