@@ -1,10 +1,18 @@
 import json
+import math
 from datetime import datetime, date
 
 from sqlalchemy import Boolean, String, Float, Integer, Date, DateTime, Text, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+
+
+def _json_safe(v):
+    """Replace NaN/Inf floats with None for JSON serialization."""
+    if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
+        return None
+    return v
 
 
 class StockSignal(Base):
@@ -75,21 +83,21 @@ class StockSignal(Base):
             "industry": self.industry,
             "market_cap": self.market_cap,
             "revenue": self.revenue,
-            "pe_ratio": self.pe_ratio,
-            "revenue_growth": self.revenue_growth,
-            "operating_margin": self.operating_margin,
+            "pe_ratio": _json_safe(self.pe_ratio),
+            "revenue_growth": _json_safe(self.revenue_growth),
+            "operating_margin": _json_safe(self.operating_margin),
             "operating_cashflow": self.operating_cashflow,
             "free_cashflow": self.free_cashflow,
-            "ps_ratio": self.ps_ratio,
-            "pb_ratio": self.pb_ratio,
+            "ps_ratio": _json_safe(self.ps_ratio),
+            "pb_ratio": _json_safe(self.pb_ratio),
             "avg_volume": self.avg_volume,
             "price_at_crossover": self.price_at_crossover,
             "sma30_at_crossover": self.sma30_at_crossover,
-            "weekly_sma30": self.weekly_sma30,
+            "weekly_sma30": _json_safe(self.weekly_sma30),
             "above_weekly_sma": self.above_weekly_sma,
             "crossover_date": self.crossover_date.isoformat() if self.crossover_date else None,
             "current_price": self.current_price,
-            "price_change_pct": self.price_change_pct,
+            "price_change_pct": _json_safe(self.price_change_pct),
             "signal_type": self.signal_type,
             "rating": self.rating,
             "rating_reasons": self.rating_reasons,
@@ -107,20 +115,20 @@ class StockSignal(Base):
             "sector": self.sector,
             "market_cap": self.market_cap,
             "revenue": self.revenue,
-            "pe_ratio": self.pe_ratio,
-            "revenue_growth": self.revenue_growth,
-            "operating_margin": self.operating_margin,
+            "pe_ratio": _json_safe(self.pe_ratio),
+            "revenue_growth": _json_safe(self.revenue_growth),
+            "operating_margin": _json_safe(self.operating_margin),
             "operating_cashflow": self.operating_cashflow,
             "free_cashflow": self.free_cashflow,
-            "ps_ratio": self.ps_ratio,
-            "pb_ratio": self.pb_ratio,
+            "ps_ratio": _json_safe(self.ps_ratio),
+            "pb_ratio": _json_safe(self.pb_ratio),
             "price_at_crossover": self.price_at_crossover,
             "sma30_at_crossover": self.sma30_at_crossover,
-            "weekly_sma30": self.weekly_sma30,
+            "weekly_sma30": _json_safe(self.weekly_sma30),
             "above_weekly_sma": self.above_weekly_sma,
             "crossover_date": self.crossover_date.isoformat() if self.crossover_date else None,
             "current_price": self.current_price,
-            "price_change_pct": self.price_change_pct,
+            "price_change_pct": _json_safe(self.price_change_pct),
             "signal_type": self.signal_type,
             "rating": self.rating,
             "rating_reasons": self.rating_reasons,
