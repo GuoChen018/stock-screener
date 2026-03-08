@@ -534,15 +534,25 @@ def get_watchlist_tickers(db: Session = Depends(get_db)):
     return [t[0] for t in items]
 
 
-def _run_scan_background():
-    """Run the full scan + email in a background thread."""
+@app.post("/api/scan")
+async def trigger_scan(background_tasks: BackgroundTasks):
+    """Manually trigger a scan (runs in background, returns immediately)."""
+    background_tasks.add_task(_run_scan_sync)
+    return {"message": "Scan started in background. You'll receive an email when complete."}
+
+
+def _run_scan_sync():
+    """Run the full scan + email (called as a background task)."""
     import asyncio
     from app.emailer import DailyRecap, RecapStock
     from app.scheduler import _build_watchlist_recap
 
     db = SessionLocal()
     try:
-        signals = asyncio.run(run_scan(db))
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        signals = loop.run_until_complete(run_scan(db))
+        loop.close()
 
         top_above = []
         top_below = []
@@ -586,12 +596,3 @@ def _run_scan_background():
         logger.exception("Background scan failed")
     finally:
         db.close()
-
-
-@app.post("/api/scan")
-def trigger_scan():
-    """Manually trigger a scan (runs in background, returns immediately)."""
-    import threading
-    t = threading.Thread(target=_run_scan_background, daemon=True)
-    t.start()
-    return {"message": "Scan started in background. You'll receive an email when complete."}
