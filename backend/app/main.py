@@ -2,7 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import func, desc
@@ -12,11 +12,8 @@ from app.config import FRONTEND_URL
 from app.database import get_db, init_db, SessionLocal
 from app.yf_session import session as yf_session
 from app.models import StockSignal, Subscriber, WatchlistItem, MacroTrend
-from app.scanner import run_scan, backfill_ohlc
 from app.rating import rate_signal
-from app.macro import scan_macro_trends, SECTOR_ETFS
-from app.scheduler import start_scheduler, stop_scheduler
-from app.emailer import send_daily_recap
+from app.macro import SECTOR_ETFS
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,10 +25,8 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    start_scheduler()
     logger.info("Application started")
     yield
-    stop_scheduler()
     logger.info("Application stopped")
 
 
@@ -53,31 +48,6 @@ app.add_middleware(
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
-
-
-@app.get("/api/debug/yf")
-def debug_yf():
-    """Debug endpoint to test yfinance connectivity."""
-    import yfinance as yf
-    import traceback
-    results = {"version": 2}
-
-    try:
-        data = yf.download("AAPL", period="5d", interval="1d", progress=False, session=yf_session)
-        results["download_empty"] = data.empty
-        results["download_shape"] = list(data.shape) if not data.empty else "empty"
-    except Exception as e:
-        results["download_error"] = traceback.format_exc()[-500:]
-
-    try:
-        t = yf.Ticker("AAPL", session=yf_session)
-        info = t.info
-        results["info_price"] = info.get("regularMarketPrice") if info else None
-        results["info_name"] = info.get("shortName") if info else None
-    except Exception as e:
-        results["info_error"] = str(e)
-
-    return results
 
 
 class SubscribeRequest(BaseModel):
@@ -572,64 +542,9 @@ def get_watchlist_tickers(db: Session = Depends(get_db)):
 
 
 @app.post("/api/scan")
-async def trigger_scan(background_tasks: BackgroundTasks):
-    """Manually trigger a scan (runs in background, returns immediately)."""
-    background_tasks.add_task(_run_scan_sync)
-    return {"message": "Scan started in background. You'll receive an email when complete."}
-
-
-def _run_scan_sync():
-    """Run the full scan + email (called as a background task)."""
-    import asyncio
-    from app.emailer import DailyRecap, RecapStock
-    from app.scheduler import _build_watchlist_recap
-
-    db = SessionLocal()
-    try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        signals = loop.run_until_complete(run_scan(db))
-        loop.close()
-
-        top_above = []
-        top_below = []
-        for s in signals:
-            stock = RecapStock(
-                ticker=s.ticker,
-                company_name=s.company_name,
-                price=s.price_at_crossover,
-                sma30=s.sma30_at_crossover,
-                rating=s.rating,
-                market_cap=s.market_cap,
-                operating_margin=s.operating_margin,
-                pe_ratio=s.pe_ratio,
-                weekly_sma30=s.weekly_sma30,
-                above_weekly_sma=s.above_weekly_sma,
-            )
-            if s.signal_type == "bullish":
-                top_above.append(stock)
-            else:
-                top_below.append(stock)
-
-        watchlist_stocks = _build_watchlist_recap(db)
-
-        recap = DailyRecap(
-            watchlist_stocks=watchlist_stocks,
-            top_above=top_above,
-            top_below=top_below,
-        )
-
-        subscribers = [
-            s.email for s in db.query(Subscriber).filter(Subscriber.active).all()
-        ]
-        if subscribers:
-            send_daily_recap(subscribers, recap)
-
-        backfill_ohlc(db)
-        scan_macro_trends(db)
-
-        logger.info("Background scan complete: %d signals", len(signals))
-    except Exception:
-        logger.exception("Background scan failed")
-    finally:
-        db.close()
+def trigger_scan():
+    """Scanning runs locally via cron. Use local_scan.py instead."""
+    return {
+        "message": "Scanning is handled locally via cron job. "
+        "Run 'python local_scan.py' from the backend directory."
+    }
