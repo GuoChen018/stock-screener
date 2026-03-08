@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.config import FRONTEND_URL
 from app.database import get_db, init_db, SessionLocal
+from app.yf_session import session as yf_session
 from app.models import StockSignal, Subscriber, WatchlistItem, MacroTrend
 from app.scanner import run_scan, backfill_ohlc
 from app.rating import rate_signal
@@ -125,7 +126,7 @@ def get_stock(ticker: str, db: Session = Depends(get_db)):
 
     ticker = ticker.upper()
     try:
-        t = yf.Ticker(ticker)
+        t = yf.Ticker(ticker, session=yf_session)
         info = t.info or {}
         if not info.get("regularMarketPrice"):
             raise HTTPException(status_code=404, detail="Stock not found")
@@ -135,7 +136,7 @@ def get_stock(ticker: str, db: Session = Depends(get_db)):
                 return default
             return v
 
-        hist = yf.download(ticker, period="8mo", interval="1d", progress=False)
+        hist = yf.download(ticker, period="8mo", interval="1d", progress=False, session=yf_session)
         if hist.empty:
             raise HTTPException(status_code=404, detail="No price data available")
 
@@ -329,7 +330,7 @@ def search_tickers(q: str = Query("", min_length=1, max_length=10)):
     q = q.upper().strip()
     results = []
     try:
-        t = yf.Ticker(q)
+        t = yf.Ticker(q, session=yf_session)
         info = t.info
         if info and info.get("regularMarketPrice"):
             results.append({
@@ -368,6 +369,7 @@ def list_watchlist(db: Session = Depends(get_db)):
             group_by="ticker",
             threads=True,
             progress=False,
+            session=yf_session,
         )
         if not data.empty:
             for ticker in tickers:
@@ -419,7 +421,7 @@ def list_watchlist(db: Session = Depends(get_db)):
 
     for ticker in tickers:
         try:
-            info = yf.Ticker(ticker).info
+            info = yf.Ticker(ticker, session=yf_session).info
             if not info:
                 continue
             fundamentals_data[ticker] = {
@@ -498,7 +500,7 @@ def add_to_watchlist(req: WatchlistAddRequest, db: Session = Depends(get_db)):
     company_name = ticker
     try:
         import yfinance as yf
-        info = yf.Ticker(ticker).info
+        info = yf.Ticker(ticker, session=yf_session).info
         if info and info.get("regularMarketPrice"):
             company_name = info.get("shortName", info.get("longName", ticker))
         else:

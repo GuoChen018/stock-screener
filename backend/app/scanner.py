@@ -14,6 +14,7 @@ from app.config import MIN_MARKET_CAP, MIN_AVG_VOLUME
 from app.models import StockSignal
 from app.rating import rate_signal
 from app.tickers import fetch_all_us_tickers
+from app.yf_session import session as yf_session
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,7 @@ def _find_crossovers(tickers: list[str]) -> dict[str, dict]:
                 group_by="ticker",
                 threads=True,
                 progress=False,
+                session=yf_session,
             )
         except Exception:
             logger.exception("Failed to download batch starting at index %d", i)
@@ -174,7 +176,7 @@ def _fetch_info(ticker: str) -> Optional[dict]:
     """Fetch ticker info with retries on rate-limit errors."""
     for attempt in range(INFO_MAX_RETRIES + 1):
         try:
-            info = yf.Ticker(ticker).info
+            info = yf.Ticker(ticker, session=yf_session).info
             if info and info.get("regularMarketPrice"):
                 return info
             return None
@@ -442,6 +444,7 @@ def backfill_ohlc(db: Session):
                 group_by="ticker",
                 threads=True,
                 progress=False,
+                session=yf_session,
             )
         except Exception:
             logger.exception("Backfill: failed to download batch at index %d", i)
@@ -505,7 +508,7 @@ def backfill_ohlc(db: Session):
 def _fetch_news(ticker: str) -> list[dict]:
     """Fetch recent news headlines for a ticker."""
     try:
-        t = yf.Ticker(ticker)
+        t = yf.Ticker(ticker, session=yf_session)
         raw_news = t.news or []
         articles = []
         for item in raw_news[:8]:

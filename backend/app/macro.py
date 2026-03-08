@@ -5,6 +5,7 @@ import yfinance as yf
 from sqlalchemy.orm import Session
 
 from app.models import MacroTrend
+from app.yf_session import session as yf_session
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ def scan_macro_trends(db: Session):
             group_by="ticker",
             threads=True,
             progress=False,
+            session=yf_session,
         )
     except Exception:
         logger.exception("Failed to download macro ETF data")

@@ -11,6 +11,7 @@ from app.emailer import send_daily_recap, DailyRecap, RecapStock
 from app.models import Subscriber, WatchlistItem, StockSignal
 from app.rating import rate_signal
 from app.scanner import run_scan
+from app.yf_session import session as yf_session
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ def _build_watchlist_recap(db) -> list[RecapStock]:
         data = yf.download(
             tickers, period="8mo", interval="1d",
             group_by="ticker", threads=True, progress=False,
+            session=yf_session,
         )
     except Exception:
         logger.warning("Failed to download watchlist data for recap")
@@ -51,7 +53,7 @@ def _build_watchlist_recap(db) -> list[RecapStock]:
     fundamentals_cache: dict[str, dict] = {}
     for ticker in tickers:
         try:
-            info = yf.Ticker(ticker).info
+            info = yf.Ticker(ticker, session=yf_session).info
             if info:
                 fundamentals_cache[ticker] = {
                     "market_cap": _safe(info.get("marketCap")),
