@@ -50,6 +50,24 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/api/debug/db")
+def debug_db(db: Session = Depends(get_db)):
+    """Temporary debug: check if stock queries work."""
+    import traceback
+    try:
+        count = db.query(StockSignal).count()
+        first = db.query(StockSignal).first()
+        result = {"count": count, "first_ticker": first.ticker if first else None}
+        if first:
+            import json
+            d = first.to_summary()
+            json.dumps(d)
+            result["serialization"] = "ok"
+        return result
+    except Exception:
+        return {"error": traceback.format_exc()[-1000:]}
+
+
 class SubscribeRequest(BaseModel):
     email: EmailStr
 
