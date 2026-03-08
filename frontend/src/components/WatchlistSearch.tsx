@@ -9,7 +9,7 @@ export default function WatchlistSearch() {
   const [searching, setSearching] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
   const addMutation = useAddToWatchlist();
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
