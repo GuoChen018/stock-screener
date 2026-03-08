@@ -9,7 +9,7 @@ from sqlalchemy import func, desc
 from sqlalchemy.orm import Session
 
 from app.config import FRONTEND_URL
-from app.database import get_db, init_db
+from app.database import get_db, init_db, SessionLocal
 from app.models import StockSignal, Subscriber, WatchlistItem, MacroTrend
 from app.scanner import run_scan, backfill_ohlc
 from app.rating import rate_signal
@@ -534,53 +534,64 @@ def get_watchlist_tickers(db: Session = Depends(get_db)):
     return [t[0] for t in items]
 
 
-@app.post("/api/scan")
-async def trigger_scan(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    """Manually trigger a scan (for testing)."""
+def _run_scan_background():
+    """Run the full scan + email in a background thread."""
+    import asyncio
     from app.emailer import DailyRecap, RecapStock
     from app.scheduler import _build_watchlist_recap
 
-    signals = await run_scan(db)
+    db = SessionLocal()
+    try:
+        signals = asyncio.run(run_scan(db))
 
-    top_above = []
-    top_below = []
-    for s in signals:
-        stock = RecapStock(
-            ticker=s.ticker,
-            company_name=s.company_name,
-            price=s.price_at_crossover,
-            sma30=s.sma30_at_crossover,
-            rating=s.rating,
-            market_cap=s.market_cap,
-            operating_margin=s.operating_margin,
-            pe_ratio=s.pe_ratio,
-            weekly_sma30=s.weekly_sma30,
-            above_weekly_sma=s.above_weekly_sma,
+        top_above = []
+        top_below = []
+        for s in signals:
+            stock = RecapStock(
+                ticker=s.ticker,
+                company_name=s.company_name,
+                price=s.price_at_crossover,
+                sma30=s.sma30_at_crossover,
+                rating=s.rating,
+                market_cap=s.market_cap,
+                operating_margin=s.operating_margin,
+                pe_ratio=s.pe_ratio,
+                weekly_sma30=s.weekly_sma30,
+                above_weekly_sma=s.above_weekly_sma,
+            )
+            if s.signal_type == "bullish":
+                top_above.append(stock)
+            else:
+                top_below.append(stock)
+
+        watchlist_stocks = _build_watchlist_recap(db)
+
+        recap = DailyRecap(
+            watchlist_stocks=watchlist_stocks,
+            top_above=top_above,
+            top_below=top_below,
         )
-        if s.signal_type == "bullish":
-            top_above.append(stock)
-        else:
-            top_below.append(stock)
 
-    watchlist_stocks = _build_watchlist_recap(db)
+        subscribers = [
+            s.email for s in db.query(Subscriber).filter(Subscriber.active).all()
+        ]
+        if subscribers:
+            send_daily_recap(subscribers, recap)
 
-    recap = DailyRecap(
-        watchlist_stocks=watchlist_stocks,
-        top_above=top_above,
-        top_below=top_below,
-    )
+        backfill_ohlc(db)
+        scan_macro_trends(db)
 
-    subscribers = [
-        s.email for s in db.query(Subscriber).filter(Subscriber.active).all()
-    ]
-    if subscribers:
-        background_tasks.add_task(send_daily_recap, subscribers, recap)
+        logger.info("Background scan complete: %d signals", len(signals))
+    except Exception:
+        logger.exception("Background scan failed")
+    finally:
+        db.close()
 
-    backfill_ohlc(db)
-    scan_macro_trends(db)
 
-    return {
-        "message": f"Scan complete: {len(signals)} qualifying stocks found",
-        "new_signals": len([s for s in signals if s.price_change_pct == 0.0]),
-        "total_signals": len(signals),
-    }
+@app.post("/api/scan")
+def trigger_scan():
+    """Manually trigger a scan (runs in background, returns immediately)."""
+    import threading
+    t = threading.Thread(target=_run_scan_background, daemon=True)
+    t.start()
+    return {"message": "Scan started in background. You'll receive an email when complete."}
