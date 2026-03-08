@@ -55,6 +55,38 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/api/debug/yf")
+def debug_yf():
+    """Debug endpoint to test yfinance connectivity."""
+    import yfinance as yf
+    import traceback
+    results = {}
+    try:
+        from app.yf_session import session as sess
+        results["session_type"] = type(sess).__module__ + "." + type(sess).__name__
+    except Exception as e:
+        results["session_import_error"] = str(e)
+
+    try:
+        t = yf.Ticker("AAPL", session=yf_session)
+        info = t.info
+        results["info_keys"] = list((info or {}).keys())[:10]
+        results["price"] = info.get("regularMarketPrice") if info else None
+        results["name"] = info.get("shortName") if info else None
+    except Exception as e:
+        results["info_error"] = str(e)
+        results["info_traceback"] = traceback.format_exc()[-500:]
+
+    try:
+        data = yf.download("AAPL", period="5d", interval="1d", progress=False, session=yf_session)
+        results["download_shape"] = list(data.shape) if not data.empty else "empty"
+        results["download_cols"] = list(data.columns)[:5] if not data.empty else []
+    except Exception as e:
+        results["download_error"] = str(e)
+
+    return results
+
+
 class SubscribeRequest(BaseModel):
     email: EmailStr
 
