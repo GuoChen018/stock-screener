@@ -98,6 +98,7 @@ const COLUMNS: ColumnDef[] = [
   { key: 'sector', label: 'SECTOR', align: 'left', sortable: true },
   { key: 'market_cap', label: 'MKT_CAP', align: 'right', sortable: true },
   { key: 'current_price', label: 'PRICE', align: 'right', sortable: true },
+  { key: 'weekly_sma30', label: 'SMA30', align: 'right', sortable: true },
   { key: 'above_weekly_sma', label: 'VS SMA', align: 'center', sortable: true },
   { key: 'price_change_pct', label: '%CHG', align: 'right', sortable: true },
   { key: 'chart', label: 'CHART', align: 'center', sortable: false, className: 'w-32' },
@@ -203,6 +204,9 @@ export default function StockTable({ stocks, onSelect, selectedTicker, sortBy, s
               </td>
               <td className="py-2 px-3 text-right text-[#c0d0c0] font-medium">
                 ${stock.current_price.toFixed(2)}
+              </td>
+              <td className="py-2 px-3 text-right text-[#4a5a4a] text-xs">
+                {stock.weekly_sma30 != null ? `$${stock.weekly_sma30.toFixed(2)}` : '—'}
               </td>
               <td className="py-2 px-3 text-center text-xs">
                 {stock.above_weekly_sma != null ? (
