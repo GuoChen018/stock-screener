@@ -98,33 +98,17 @@ function WatchlistRow({ item, onSelect, isSelected, onRemove, onRatingClick }: {
           <span className="text-[#2a3a2a]">--</span>
         )}
       </td>
-      <td className="py-2.5 px-3 text-right text-xs">
-        {live?.sma30 != null ? (
-          <span className="text-[#4a5a4a]">${live.sma30.toFixed(2)}</span>
-        ) : (
-          <span className="text-[#2a3a2a]">--</span>
-        )}
-      </td>
       <td className="py-2.5 px-3 text-center">
-        {live?.above_sma != null ? (
+        {live?.above_weekly_sma != null ? (
           <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-            live.above_sma
+            live.above_weekly_sma
               ? 'bg-[#4ade80]/10 text-[#4ade80]'
               : 'bg-[#f87171]/10 text-[#f87171]'
           }`}>
-            {live.above_sma ? 'above' : 'below'}
-          </span>
-        ) : (
-          <span className="text-[10px] text-[#2a3a2a]">--</span>
-        )}
-      </td>
-      <td className="py-2.5 px-3 text-center text-xs">
-        {live?.above_weekly_sma != null ? (
-          <span className={live.above_weekly_sma ? 'text-[#4ade80]' : 'text-[#f87171]'}>
             {live.above_weekly_sma ? 'above' : 'below'}
           </span>
         ) : (
-          <span className="text-[#2a3a2a]">—</span>
+          <span className="text-[10px] text-[#2a3a2a]">--</span>
         )}
       </td>
       <td className="py-2.5 px-3 text-right text-xs">
@@ -182,9 +166,7 @@ export default function WatchlistTable({ onSelect, selectedTicker }: WatchlistTa
             <th className="py-2 px-3 text-[11px] font-medium text-[#3a4a3a] text-left">TICKER</th>
             <th className="py-2 px-3 text-[11px] font-medium text-[#3a4a3a] text-center">RATING</th>
             <th className="py-2 px-3 text-[11px] font-medium text-[#3a4a3a] text-right">PRICE</th>
-            <th className="py-2 px-3 text-[11px] font-medium text-[#3a4a3a] text-right">SMA30</th>
             <th className="py-2 px-3 text-[11px] font-medium text-[#3a4a3a] text-center">VS SMA</th>
-            <th className="py-2 px-3 text-[11px] font-medium text-[#3a4a3a] text-center">W-SMA</th>
             <th className="py-2 px-3 text-[11px] font-medium text-[#3a4a3a] text-right">%CHG</th>
             <th className="py-2 px-3 text-[11px] font-medium text-[#3a4a3a] text-right">MKT_CAP</th>
             <th className="py-2 px-3 text-[11px] font-medium text-[#3a4a3a] text-right">MARGIN</th>

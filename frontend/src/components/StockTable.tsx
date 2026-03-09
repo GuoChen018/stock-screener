@@ -98,8 +98,7 @@ const COLUMNS: ColumnDef[] = [
   { key: 'sector', label: 'SECTOR', align: 'left', sortable: true },
   { key: 'market_cap', label: 'MKT_CAP', align: 'right', sortable: true },
   { key: 'current_price', label: 'PRICE', align: 'right', sortable: true },
-  { key: 'sma30_at_crossover', label: 'SMA30', align: 'right', sortable: true },
-  { key: 'above_weekly_sma', label: 'W-SMA', align: 'center', sortable: true },
+  { key: 'above_weekly_sma', label: 'VS SMA', align: 'center', sortable: true },
   { key: 'price_change_pct', label: '%CHG', align: 'right', sortable: true },
   { key: 'chart', label: 'CHART', align: 'center', sortable: false, className: 'w-32' },
   { key: 'crossover_date', label: 'DATE', align: 'right', sortable: true },
@@ -205,12 +204,13 @@ export default function StockTable({ stocks, onSelect, selectedTicker, sortBy, s
               <td className="py-2 px-3 text-right text-[#c0d0c0] font-medium">
                 ${stock.current_price.toFixed(2)}
               </td>
-              <td className="py-2 px-3 text-right text-[#4a5a4a] text-xs">
-                ${stock.sma30_at_crossover.toFixed(2)}
-              </td>
               <td className="py-2 px-3 text-center text-xs">
                 {stock.above_weekly_sma != null ? (
-                  <span className={stock.above_weekly_sma ? 'text-[#4ade80]' : 'text-[#f87171]'}>
+                  <span className={`px-1.5 py-0.5 rounded ${
+                    stock.above_weekly_sma
+                      ? 'bg-[#4ade80]/10 text-[#4ade80]'
+                      : 'bg-[#f87171]/10 text-[#f87171]'
+                  }`}>
                     {stock.above_weekly_sma ? 'above' : 'below'}
                   </span>
                 ) : (
