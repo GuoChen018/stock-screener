@@ -57,16 +57,19 @@ function Dashboard() {
       <header className="border-b border-[#1a2a1a] bg-[#0a0f0a]/90 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-base font-bold text-[#4ade80] tracking-tight">
-                sma30-screener
-              </h1>
-              <p className="text-xs text-[#3a4a3a] mt-0.5">
-                sma 30 crossover signals
-                {stats && (
-                  <span className="text-[#2a3a2a]"> // {formatNum(stats.total_signals)} signal{stats.total_signals !== 1 ? 's' : ''}</span>
-                )}
-              </p>
+            <div className="flex-1 min-w-0 flex items-center gap-2.5">
+              <img src="/olive-logo.png" alt="olive" className="w-8 h-8" />
+              <div>
+                <h1 className="text-base font-bold text-[#4ade80] tracking-tight">
+                  olive
+                </h1>
+                <p className="text-xs text-[#3a4a3a] mt-0.5">
+                  sma 30 crossover signals
+                  {stats && (
+                    <span className="text-[#2a3a2a]"> // {formatNum(stats.total_signals)} signal{stats.total_signals !== 1 ? 's' : ''}</span>
+                  )}
+                </p>
+              </div>
             </div>
             <SubscribeForm />
           </div>
