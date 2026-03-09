@@ -34,7 +34,7 @@ def _safe_val(v, default=0):
 
 
 async def run_scan(db: Session) -> list[StockSignal]:
-    """Main scan: find stocks that crossed above or below their 30-day SMA."""
+    """Main scan: find stocks that crossed above or below their 30-week SMA."""
     tickers = await fetch_all_us_tickers()
     if not tickers:
         logger.error("No tickers available, aborting scan")
@@ -53,7 +53,7 @@ async def run_scan(db: Session) -> list[StockSignal]:
 
 
 def _find_crossovers(tickers: list[str]) -> dict[str, dict]:
-    """Download price data in batches and detect SMA 30 crossovers."""
+    """Download price data in batches and detect weekly SMA 30 crossovers."""
     crossovers: dict[str, dict] = {}
 
     for i in range(0, len(tickers), BATCH_SIZE):
@@ -103,19 +103,23 @@ def _find_crossovers(tickers: list[str]) -> dict[str, dict]:
 
                 sma = close.rolling(window=SMA_WINDOW).mean()
 
-                today_close = close.iloc[-1]
-                yesterday_close = close.iloc[-2]
-                today_sma = sma.iloc[-1]
-                yesterday_sma = sma.iloc[-2]
+                today_close = float(close.iloc[-1])
+                yesterday_close = float(close.iloc[-2])
 
-                if pd.isna(today_sma) or pd.isna(yesterday_sma):
+                weekly_close = close.resample("W").last().dropna()
+                if len(weekly_close) < SMA_WINDOW:
                     continue
+                w_sma = weekly_close.rolling(window=SMA_WINDOW).mean()
+                latest_w_sma = w_sma.iloc[-1]
+                if pd.isna(latest_w_sma):
+                    continue
+                w_sma30 = round(float(latest_w_sma), 2)
 
                 crossed_above = (
-                    today_close > today_sma and yesterday_close <= yesterday_sma
+                    today_close > w_sma30 and yesterday_close <= w_sma30
                 )
                 crossed_below = (
-                    today_close < today_sma and yesterday_close >= yesterday_sma
+                    today_close < w_sma30 and yesterday_close >= w_sma30
                 )
 
                 if crossed_above or crossed_below:
@@ -143,24 +147,11 @@ def _find_crossovers(tickers: list[str]) -> dict[str, dict]:
                             }
                         )
 
-                    w_sma30 = None
-                    w_above = None
-                    try:
-                        weekly_close = close.resample("W").last().dropna()
-                        if len(weekly_close) >= SMA_WINDOW:
-                            w_sma = weekly_close.rolling(window=SMA_WINDOW).mean()
-                            latest_w_sma = w_sma.iloc[-1]
-                            if not pd.isna(latest_w_sma):
-                                w_sma30 = round(float(latest_w_sma), 2)
-                                w_above = float(today_close) > w_sma30
-                    except Exception:
-                        pass
-
                     crossovers[ticker] = {
-                        "price": float(today_close),
-                        "sma30": float(today_sma),
+                        "price": today_close,
+                        "sma30": float(sma.iloc[-1]),
                         "weekly_sma30": w_sma30,
-                        "above_weekly_sma": w_above,
+                        "above_weekly_sma": today_close > w_sma30,
                         "avg_volume": int(_safe_val(avg_vol)),
                         "crossover_date": close.index[-1].date(),
                         "price_history": history,

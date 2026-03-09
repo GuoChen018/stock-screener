@@ -74,6 +74,7 @@ export interface WatchlistLive {
   above_sma: boolean | null;
   weekly_sma30: number | null;
   above_weekly_sma: boolean | null;
+  crossover: 'crossed_above' | 'crossed_below' | null;
   change_pct: number;
 }
 

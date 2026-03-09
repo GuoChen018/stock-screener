@@ -73,10 +73,7 @@ def list_stocks(
         wl_tickers = [t[0] for t in db.query(WatchlistItem.ticker).all()]
         query = query.filter(StockSignal.ticker.in_(wl_tickers))
     if signal_type:
-        if signal_type == "bullish":
-            query = query.filter(StockSignal.above_weekly_sma == True)
-        elif signal_type == "bearish":
-            query = query.filter(StockSignal.above_weekly_sma == False)
+        query = query.filter(StockSignal.signal_type == signal_type)
     if sector:
         query = query.filter(StockSignal.sector == sector)
     if min_market_cap is not None:
@@ -387,6 +384,7 @@ def list_watchlist(db: Session = Depends(get_db)):
 
                     w_sma30 = None
                     w_above = None
+                    w_crossover = None
                     try:
                         weekly_close = close.resample("W").last().dropna()
                         if len(weekly_close) >= 30:
@@ -395,6 +393,11 @@ def list_watchlist(db: Session = Depends(get_db)):
                             if not pd.isna(latest_w):
                                 w_sma30 = round(float(latest_w), 2)
                                 w_above = current_price > w_sma30
+                                yesterday_close = float(close.iloc[-2])
+                                if current_price > w_sma30 and yesterday_close <= w_sma30:
+                                    w_crossover = "crossed_above"
+                                elif current_price < w_sma30 and yesterday_close >= w_sma30:
+                                    w_crossover = "crossed_below"
                     except Exception:
                         pass
 
@@ -404,6 +407,7 @@ def list_watchlist(db: Session = Depends(get_db)):
                         "above_sma": current_price > current_sma if current_sma else None,
                         "weekly_sma30": w_sma30,
                         "above_weekly_sma": w_above,
+                        "crossover": w_crossover,
                         "change_pct": round(
                             (current_price - float(close.iloc[-2])) / float(close.iloc[-2]) * 100, 2
                         ) if len(close) >= 2 else 0,

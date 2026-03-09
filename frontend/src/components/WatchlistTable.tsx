@@ -106,11 +106,17 @@ function WatchlistRow({ item, onSelect, isSelected, onRemove, onRatingClick }: {
         )}
       </td>
       <td className="py-2.5 px-3 text-center">
-        {live?.above_weekly_sma != null ? (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-            live.above_weekly_sma
-              ? 'bg-[#4ade80]/10 text-[#4ade80]'
-              : 'bg-[#f87171]/10 text-[#f87171]'
+        {live?.crossover ? (
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+            live.crossover === 'crossed_above'
+              ? 'bg-[#4ade80]/20 text-[#4ade80]'
+              : 'bg-[#f87171]/20 text-[#f87171]'
+          }`}>
+            {live.crossover === 'crossed_above' ? '↑ crossed above' : '↓ crossed below'}
+          </span>
+        ) : live?.above_weekly_sma != null ? (
+          <span className={`text-[10px] ${
+            live.above_weekly_sma ? 'text-[#2a5a2a]' : 'text-[#5a2a2a]'
           }`}>
             {live.above_weekly_sma ? 'above' : 'below'}
           </span>
