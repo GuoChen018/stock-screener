@@ -32,14 +32,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="SMA30 Stock Screener", lifespan=lifespan)
 
-_origins = ["*"]
-if FRONTEND_URL:
-    _origins = [FRONTEND_URL, "http://localhost:5173", "http://localhost:3000"]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_origins,
-    allow_credentials=True,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
