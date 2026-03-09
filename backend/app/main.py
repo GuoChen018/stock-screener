@@ -73,7 +73,10 @@ def list_stocks(
         wl_tickers = [t[0] for t in db.query(WatchlistItem.ticker).all()]
         query = query.filter(StockSignal.ticker.in_(wl_tickers))
     if signal_type:
-        query = query.filter(StockSignal.signal_type == signal_type)
+        if signal_type == "bullish":
+            query = query.filter(StockSignal.above_weekly_sma == True)
+        elif signal_type == "bearish":
+            query = query.filter(StockSignal.above_weekly_sma == False)
     if sector:
         query = query.filter(StockSignal.sector == sector)
     if min_market_cap is not None:
