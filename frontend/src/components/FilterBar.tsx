@@ -1,15 +1,10 @@
-import { useSectors } from '../hooks/useStocks';
 import WatchlistSearch from './WatchlistSearch';
 
 interface FilterBarProps {
-  sector: string;
   signalType: string;
   watchlistOnly: boolean;
-  onSectorChange: (sector: string) => void;
   onSignalTypeChange: (type: string) => void;
   onWatchlistToggle: (on: boolean) => void;
-  onScan: () => void;
-  scanning: boolean;
 }
 
 const SIGNAL_TABS = [
@@ -19,17 +14,11 @@ const SIGNAL_TABS = [
 ];
 
 export default function FilterBar({
-  sector,
   signalType,
   watchlistOnly,
-  onSectorChange,
   onSignalTypeChange,
   onWatchlistToggle,
-  onScan,
-  scanning,
 }: FilterBarProps) {
-  const { data: sectors } = useSectors();
-
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex border border-[#1a2a1a] overflow-hidden">
@@ -64,26 +53,7 @@ export default function FilterBar({
         ★ watchlist
       </button>
 
-      <select
-        value={sector}
-        onChange={(e) => onSectorChange(e.target.value)}
-        className="bg-[#0d120d] border border-[#1a2a1a] px-2 py-1.5 text-[11px] text-[#6a7a6a] focus:outline-none focus:border-[#4ade80]/40"
-      >
-        <option value="">all_sectors</option>
-        {sectors?.map((s) => (
-          <option key={s} value={s}>{s.toLowerCase()}</option>
-        ))}
-      </select>
-
       <WatchlistSearch />
-
-      <button
-        onClick={onScan}
-        disabled={scanning}
-        className="ml-auto border border-[#4ade80]/40 text-[#4ade80] text-[11px] px-3 py-1.5 hover:bg-[#4ade80]/10 disabled:border-[#1a2a1a] disabled:text-[#3a4a3a] transition-colors"
-      >
-        {scanning ? 'scanning...' : '> run_scan'}
-      </button>
     </div>
   );
 }

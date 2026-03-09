@@ -86,7 +86,7 @@ export default function WatchlistSearch() {
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
             placeholder="add ticker..."
-            className="bg-[#0d120d] border border-[#1a2a1a] px-2 py-1 text-[11px] text-[#c0d0c0] placeholder-[#2a3a2a] w-36 focus:outline-none focus:border-[#4ade80]/40"
+            className="bg-[#0d120d] border border-[#1a2a1a] px-2 py-1.5 text-[11px] text-[#c0d0c0] placeholder-[#2a3a2a] w-36 focus:outline-none focus:border-[#4ade80]/40"
           />
           {searching && (
             <div className="absolute right-2 top-1/2 -translate-y-1/2">
@@ -97,7 +97,7 @@ export default function WatchlistSearch() {
         <button
           onClick={handleSubmit}
           disabled={addMutation.isPending || !input.trim()}
-          className="border border-[#1a2a1a] text-[#4a5a4a] text-[11px] px-2 py-1 hover:text-[#4ade80] hover:border-[#4ade80]/30 disabled:opacity-30 transition-colors"
+          className="border border-[#1a2a1a] text-[#4a5a4a] text-[11px] px-2 py-1.5 hover:text-[#4ade80] hover:border-[#4ade80]/30 disabled:opacity-30 transition-colors"
         >
           {addMutation.isPending ? '...' : '+'}
         </button>

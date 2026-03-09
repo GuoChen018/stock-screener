@@ -65,10 +65,18 @@ export function useAddToWatchlist() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: addToWatchlist,
-    onSuccess: () => {
+    onMutate: async (ticker: string) => {
+      await qc.cancelQueries({ queryKey: ['watchlist-tickers'] });
+      const prev = qc.getQueryData<string[]>(['watchlist-tickers']);
+      qc.setQueryData<string[]>(['watchlist-tickers'], (old) => [...(old || []), ticker]);
+      return { prev };
+    },
+    onError: (_err, _ticker, context) => {
+      if (context?.prev) qc.setQueryData(['watchlist-tickers'], context.prev);
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ['watchlist-tickers'] });
       qc.invalidateQueries({ queryKey: ['watchlist'] });
-      qc.invalidateQueries({ queryKey: ['stocks'] });
     },
   });
 }
@@ -77,10 +85,18 @@ export function useRemoveFromWatchlist() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: removeFromWatchlist,
-    onSuccess: () => {
+    onMutate: async (ticker: string) => {
+      await qc.cancelQueries({ queryKey: ['watchlist-tickers'] });
+      const prev = qc.getQueryData<string[]>(['watchlist-tickers']);
+      qc.setQueryData<string[]>(['watchlist-tickers'], (old) => (old || []).filter((t) => t !== ticker));
+      return { prev };
+    },
+    onError: (_err, _ticker, context) => {
+      if (context?.prev) qc.setQueryData(['watchlist-tickers'], context.prev);
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ['watchlist-tickers'] });
       qc.invalidateQueries({ queryKey: ['watchlist'] });
-      qc.invalidateQueries({ queryKey: ['stocks'] });
     },
   });
 }

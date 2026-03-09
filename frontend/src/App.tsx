@@ -6,7 +6,6 @@ import StockDetail from './components/StockDetail';
 import WatchlistTable from './components/WatchlistTable';
 import FilterBar from './components/FilterBar';
 import SubscribeForm from './components/SubscribeForm';
-import { triggerScan } from './lib/api';
 import type { StockFilters } from './lib/api';
 
 const queryClient = new QueryClient();
@@ -24,7 +23,6 @@ function Dashboard() {
   const [watchlistActive, setWatchlistActive] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
-  const [scanning, setScanning] = useState(false);
   const closingRef = useRef(false);
 
   const closePanel = useCallback(() => {
@@ -38,19 +36,8 @@ function Dashboard() {
     }, 200);
   }, []);
 
-  const { data, isLoading, refetch } = useStocks(filters);
+  const { data, isLoading } = useStocks(filters);
   const { data: stats } = useStats();
-
-  const handleScan = useCallback(async () => {
-    setScanning(true);
-    try {
-      await triggerScan();
-      queryClient.invalidateQueries();
-      await refetch();
-    } finally {
-      setScanning(false);
-    }
-  }, [refetch]);
 
   return (
     <div className="min-h-screen bg-[#0a0f0a]">
@@ -79,14 +66,10 @@ function Dashboard() {
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4">
         <div className="mb-4">
           <FilterBar
-            sector={filters.sector || ''}
             signalType={filters.signal_type || ''}
             watchlistOnly={watchlistActive}
-            onSectorChange={(sector) => setFilters((f) => ({ ...f, sector: sector || undefined, offset: 0 }))}
             onSignalTypeChange={(type) => { setWatchlistActive(false); setFilters((f) => ({ ...f, signal_type: type || undefined, offset: 0 })); }}
             onWatchlistToggle={(on) => setWatchlistActive(on)}
-            onScan={handleScan}
-            scanning={scanning}
           />
         </div>
 
